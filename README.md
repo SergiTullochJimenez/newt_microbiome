@@ -65,7 +65,7 @@ do
 done
 ```
 
-The generated file cutadapt_primer_trimming_stats.txt is available also, but a summary can be obtained with the following command:
+The generated file ([cutadapt_primer_trimming_stats.txt](https://github.com/SergiTullochJimenez/Newt_microbiome/blob/main/cutadapt_primer_trimming_stats.txt)) is available also, but a summary can be obtained with the following command:
 
 
 ```
@@ -109,8 +109,8 @@ sample.names
 ```
 Plot quality profiles. I chose 3 random samples
 ```
-plotQualityProfile(fnFs[51:53])
-plotQualityProfile(fnRs[51:53])
+[plotQualityProfile(fnFs[51:53])](https://github.com/SergiTullochJimenez/Newt_microbiome/blob/main/Quality_plot_F.pdf)
+[plotQualityProfile(fnRs[51:53])](https://github.com/SergiTullochJimenez/Newt_microbiome/blob/main/Quality_plot_R.pdf)
 ```
 Filtering and Trimming: According to the plots we decided to go for 210 length for forward and reverse
 
@@ -133,8 +133,13 @@ errR <- learnErrors(filtRs, nbases=1e8, multithread=2, randomize=TRUE)
 plotErrors(errF, nominalQ=TRUE)
 plotErrors(errR, nominalQ=TRUE)
 
+```
+[Forward plot](https://github.com/SergiTullochJimenez/Newt_microbiome/blob/main/Errors_F.pdf)
+[Reverse plot](https://github.com/SergiTullochJimenez/Newt_microbiome/blob/main/Errors_R.pdf)
 
-#Infer sequences
+
+Infer sequences
+```
 derepFs <- derepFastq(filtFs)
 derepRs <- derepFastq(filtRs)
 sam.names <- sapply(strsplit(basename(filtFs), "_"), `[`, 1)
@@ -149,7 +154,10 @@ dadaRs <- dada(derepRs, err=ddRs[[1]]$err_out, pool=TRUE, multithread=2)
 dadaFs[[1]]
 mergers <- mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose=TRUE)
 ```
-Inspect to see how it went and export the results
+[Plot for derepF](https://github.com/SergiTullochJimenez/Newt_microbiome/blob/main/Infer_F.pdf)
+[Plot for derepR](https://github.com/SergiTullochJimenez/Newt_microbiome/blob/main/Infer_R.pdf)
+
+Inspect to see how it went and export the results ([mergers.xlsx](https://github.com/SergiTullochJimenez/Newt_microbiome/blob/main/mergers.xlsx))
 
 ```
 head(mergers[[1]])
