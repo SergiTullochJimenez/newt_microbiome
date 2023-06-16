@@ -189,9 +189,93 @@ write(asv_fasta, "~/ASVs.fa")
 asv_tab <- t(seqtab)
 write.table(asv_tab, "~/Desktop/Sergi/microbiome/ASVs_counts-seqs.tsv", sep="\t", quote=F, col.names=NA)
 ```
+**Taxonomy**
 
+It is important to download the latest SILVA database and unzip the file
+```
+setwd("~/Desktop/Sergi/microbiome") #REMEMBER TO LOOK AT IT!
 
+library (dplyr)
+library (DECIPHER)
+library(dada2); packageVersion("dada2")
 
+#Consulting SILVA database
+ref_fasta <- "/Users/imac2016/Desktop/Sergi/TFM/Microbiome_analysis/BonacoltaEMPV4/filtered/silva_nr99_v138.1_train_set.fa.gz" #Check what the path is
+taxa <- assignTaxonomy(seqtab, refFasta=ref_fasta, multithread=2)
+colnames(taxa) <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus")
+
+#Species assignment
+
+taxa <- addSpecies(taxa, "/Users/imac2016/Desktop/Sergi/TFM/Microbiome_analysis/BonacoltaEMPV4/filtered/silva_species_assignment_v138.1.fa.gz")
+taxa.print <- taxa
+
+write.xlsx(taxa.print, file = "taxed.xlsx", 
+           sheetName= "taxed", append=TRUE)
+
+asv_tax <- taxa
+row.names(asv_tax) <- sub(">", "", asv_headers)
+write.table(asv_tax, "~/Desktop/Sergi/microbiome/ASVs_taxonomy.tsv", sep="\t", quote=F, col.names=NA)
+
+asv_tabtax <- cbind(asv_tab,asv_tax)
+row.names(asv_tabtax) <- sub(">", "", asv_headers)
+write.table(asv_tabtax, "~/Desktop/Sergi/microbiome/ASVs_counts_taxonomy.tsv", sep="\t", quote=F, col.names=NA)
+
+```
+At this point a tree would also be done, but it still hasn't been done due to the computational intensity and unavailablity (up to this day) of powerful enough computers.
+
+**Data filtering**
+
+```
+setwd("~/Desktop/Sergi/microbiome")
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("phyloseq", version = "3.9")
+
+library("phyloseq"); packageVersion("phyloseq")
+library("ggplot2"); packageVersion("ggplot2")
+library("viridis"); packageVersion("viridis")
+library("tidyr"); packageVersion("tidyr")
+library("plyr"); packageVersion("plyr")
+library("dplyr"); packageVersion("dplyr")
+library("tidyr"); packageVersion("tidyr")
+```
+Combinig data into an object
+```
+SV <- as.matrix(read.delim("~/Desktop/Sergi/microbiome/analysis/ASVs_counts.tsv", row.names = 1, check.names= TRUE, sep = "\t", header = TRUE))
+tax <-as.matrix(read.delim("~/Desktop/Sergi/microbiome/analysis/ASVs_taxonomy.tsv", row.names = 1, header = TRUE, sep = "\t"))
+map <- read.delim("~/Desktop/Sergi/microbiome/analysis/DATABASE_SEQUENCED.csv", sep =",", header = TRUE)
+
+#tree <- ape::read.tree(file = "~/Desktop/Sergi/microbiome/tree.nw")
+```
+Row names weren't right in "map", changed them in this way
+```
+row.names(map)
+samples<-map$EXTRACTION.CODE
+rownames(map)<-samples
+
+rownames(map) = make.names(samples, unique=TRUE)
+
+ps = phyloseq(otu_table(SV, taxa_are_rows=TRUE), 
+              sample_data(map), 
+              tax_table(tax) 
+              #phy_tree(tree)
+              )
+```
+The object "ps" is easlily created, so it wasn't saved. It looks like this:
+
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 13441 taxa and 192 samples ]
+sample_data() Sample Data:       [ 192 samples by 22 sample variables ]
+tax_table()   Taxonomy Table:    [ 13441 taxa by 8 taxonomic ranks ]
+
+Now filtering by eliminating unwanted taxa (for now). 
+As said, it might be interesting to explore the cloroplast sequences or the mithocondiral ones in the future
+```
+ps_filtered <- subset_taxa(ps, (Order!="Chloroplast"| is.na(Order)))
+ps_filtered <- subset_taxa(ps_filtered, (Family!="Mitochondria"| is.na(Family)))
+ps_filtered <- subset_taxa(ps_filtered, (Kingdom!="Eukaryota"| is.na(Kingdom)))
+ps_filtered <- subset_taxa(ps_filtered, (Class!="Embryophyceae"| is.na(Class)))
 
 
 
