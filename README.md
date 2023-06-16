@@ -265,9 +265,13 @@ ps = phyloseq(otu_table(SV, taxa_are_rows=TRUE),
 The object "ps" is easlily created, so it wasn't saved. It looks like this:
 
 phyloseq-class experiment-level object
+
 otu_table()   OTU Table:         [ 13441 taxa and 192 samples ]
+
 sample_data() Sample Data:       [ 192 samples by 22 sample variables ]
+
 tax_table()   Taxonomy Table:    [ 13441 taxa by 8 taxonomic ranks ]
+
 
 Now filtering by eliminating unwanted taxa (for now). 
 As said, it might be interesting to explore the cloroplast sequences or the mithocondiral ones in the future
@@ -276,8 +280,120 @@ ps_filtered <- subset_taxa(ps, (Order!="Chloroplast"| is.na(Order)))
 ps_filtered <- subset_taxa(ps_filtered, (Family!="Mitochondria"| is.na(Family)))
 ps_filtered <- subset_taxa(ps_filtered, (Kingdom!="Eukaryota"| is.na(Kingdom)))
 ps_filtered <- subset_taxa(ps_filtered, (Class!="Embryophyceae"| is.na(Class)))
+```
+ps_filtered looks like this after filtering:
+
+phyloseq-class experiment-level object
+
+otu_table()   OTU Table:         [ 12504 taxa and 192 samples ]
+
+sample_data() Sample Data:       [ 192 samples by 22 sample variables ]
+
+tax_table()   Taxonomy Table:    [ 12504 taxa by 8 taxonomic ranks ]
+
+Now to filter for minimum 250 reads and for the ASV that are present in the 99% of abundance in at least one sample:
+```
+ps_filtered_2 <- prune_samples(sample_sums(ps_filtered)>=250, ps_filtered)
+f1<- filterfun_sample(topf(0.99))
+wh1 <- genefilter_sample(ps_filtered, f1, A=2)
+ps_filtered_2 <- prune_taxa(wh1, ps_filtered)
+```
+The new ps_filtering_2 object looks like this:
+
+phyloseq-class experiment-level object
+
+otu_table()   OTU Table:         [ 8294 taxa and 192 samples ]
+
+sample_data() Sample Data:       [ 192 samples by 22 sample variables ]
+
+tax_table()   Taxonomy Table:    [ 8294 taxa by 8 taxonomic ranks ]
+
+This object was saved in an RDS file 
+```
+saveRDS(ps_filtered_2, 'ps_filtered_2.rds')
+```
+
+**Decontamination**
+```
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+BiocManager::install("decontam")
+
+library("decontam")
+```
+Following the guides in the Del Campo git-hub, the decontamination was done with the following code in two steps:
+The first one included extraction controls, aplicable to all samples
+```
+decontam_result_0.099 <- isContaminant(
+  ps_filtered_2,
+  neg = sample_data(ps_filtered_2)$Negative,
+  method = "prevalence",
+  detailed = TRUE
+)
+write.csv(decontam_result_0.099, "~/Desktop/Sergi/microbiome/analysis/decontam_results_0.099.csv")
+```
+The [decontamination]() file contained probable contamination ASVs, which were copied and pasted into a vector in R with 
+```
+badTaxa<-read.delim(pipe("pbpaste"))
+```
+A new phyloseq object was created without possible contaminants and their samples
+```
+badTaxa <- bt
+allTaxa <- taxa_names(ps_filtered_2)
+allTaxa <- allTaxa[!(allTaxa %in% badTaxa)]
+
+ps_filtered_decontaminated <- prune_taxa(allTaxa, ps_filtered_2)
+ps_filtered_decontaminated = subset_samples(ps_filtered_decontaminated, EXTRACTION.CODE != "CTRL1" & EXTRACTION.CODE != "CTRL3") #Remove the two blanks
+saveRDS(ps_filtered_decontaminated, 'ps_filtered_decontaminated.rds')
+```
+Which looked like this:
+
+phyloseq-class experiment-level object
+
+otu_table()   OTU Table:         [ 8209 taxa and 190 samples ]
+
+sample_data() Sample Data:       [ 190 samples by 24 sample variables ]
+
+tax_table()   Taxonomy Table:    [ 8209 taxa by 8 taxonomic ranks ]
+
+The second decontamination was done in batches, as each batch had it's own water, which was sequenced and used for this decontamination
+```
+ps_filtered_decontaminated_2 = subset_samples(ps_filtered_decontaminated, Species != "Leafs" & Species != "Rocks") #Remove unwanted sequences
+
+ps_filtered_decontaminated_2@sam_data[["Batch"]][is.na(ps_filtered_decontaminated_2@sam_data[["Batch"]])] <- 0
+
+decontam_result_0.099_2 <- isContaminant(
+  ps_filtered_decontaminated_2,
+  neg = as.logical(sample_data(ps_filtered_decontaminated_2)$TRUE_sample),
+  method = "prevalence",
+  batch = sample_data(ps_filtered_decontaminated_2)$Batch,
+  detailed = TRUE
+)
 
 
+write.csv(decontam_result_0.099_2, "~/Desktop/Sergi/microbiome/decontam_results_0.099_2.csv")
+
+badTaxa2<-read.delim(pipe("pbpaste"))
+
+badTaxa2 <- as.character(badTaxa2[,1])
+allTaxa2 <- taxa_names(ps_filtered_decontaminated_2)
+allTaxa2 <- allTaxa2[!(allTaxa2 %in% badTaxa2)]
+# new phyloseq object with excluded ASVs
+ps_filtered_decontaminated_2 <- prune_taxa(allTaxa2, ps_filtered_decontaminated_2)
+
+ps_filtered_decontaminated_2 = subset_samples(ps_filtered_decontaminated_2, TRUE_sample != "TRUE") #Remove the water samples
+saveRDS(ps_filtered_decontaminated_2, 'ps_filtered_decontaminated_2.rds')
+```
+The final phyloseq object will look like this:
+
+phyloseq-class experiment-level object
+
+otu_table()   OTU Table:         [ 7984 taxa and 174 samples ]
+
+sample_data() Sample Data:       [ 174 samples by 24 sample variables ]
+
+tax_table()   Taxonomy Table:    [ 7984 taxa by 8 taxonomic ranks ]
 
 
 
