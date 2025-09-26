@@ -297,7 +297,7 @@ BiocManager::install("decontam")
 library("decontam")
 ```
 Following the guides in the Del Campo git-hub, the decontamination was done with the following code in two steps:
-The first one included extraction controls, aplicable to all samples
+The first one included extraction controls, applicable to all samples
 ```
 decontam_result_0.099 <- isContaminant(
   ps_filtered_2,
@@ -335,6 +335,10 @@ The second decontamination was done in batches, as each batch had it's own water
 ```
 ps_filtered_decontaminated_2 = subset_samples_no_zero(ps_filtered_decontaminated, Species == "Calotriton arnoldi") #Remove unwanted sequences
 
+otu_table()   OTU Table:         [ 7481 taxa and 138 samples ]
+sample_data() Sample Data:       [ 138 samples by 24 sample variables ]
+tax_table()   Taxonomy Table:    [ 7481 taxa by 8 taxonomic ranks ]
+
 ps_merged <- merge_samples(ps_filtered_decontaminated_2,
                            group = "Specimen.Code",
                            fun = "sum")
@@ -361,12 +365,23 @@ identical(sort(rownames(meta_merged)), sort(sample_names(ps_merged)))
 sample_data(ps_merged) <- sample_data(meta_merged)
 
 ```
+phyloseq-class experiment-level object
+otu_table()   OTU Table:         [ 7481 taxa and 82 samples ]
+sample_data() Sample Data:       [ 82 samples by 24 sample variables ]
+tax_table()   Taxonomy Table:    [ 7481 taxa by 8 taxonomic ranks ]
+
+wh2 <- genefilter_sample(
+  ps_merged,
+  filterfun_sample(function(x) x >= 2),
+  A = 2
+)
+
+ps_filtered_2 <- prune_taxa(wh2, ps_merged)
+
 The final phyloseq object will look like this:
 
 phyloseq-class experiment-level object
-otu_table()   OTU Table:         [ 5084 taxa and 82 samples ]
-sample_data() Sample Data:       [ 82 samples by 27 sample variables ]
-tax_table()   Taxonomy Table:    [ 5084 taxa by 8 taxonomic ranks ]
-
-
+otu_table()   OTU Table:         [ 5996 taxa and 82 samples ]
+sample_data() Sample Data:       [ 82 samples by 24 sample variables ]
+tax_table()   Taxonomy Table:    [ 5996 taxa by 8 taxonomic ranks ]
 
