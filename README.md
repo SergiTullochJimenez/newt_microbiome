@@ -1,4 +1,4 @@
-# Newt_microbiome
+# newt_microbiome
 Analysis of the microbiome of Calotriton arnoldi
 
 **Preparing data for Dada**
