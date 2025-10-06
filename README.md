@@ -364,7 +364,7 @@ identical(sort(rownames(meta_merged)), sort(sample_names(ps_merged)))
 #Attach metadata back
 sample_data(ps_merged) <- sample_data(meta_merged)
 
-```
+
 phyloseq-class experiment-level object
 otu_table()   OTU Table:         [ 7481 taxa and 82 samples ]
 sample_data() Sample Data:       [ 82 samples by 24 sample variables ]
@@ -384,4 +384,6 @@ phyloseq-class experiment-level object
 otu_table()   OTU Table:         [ 5996 taxa and 82 samples ]
 sample_data() Sample Data:       [ 82 samples by 24 sample variables ]
 tax_table()   Taxonomy Table:    [ 5996 taxa by 8 taxonomic ranks ]
+```
+
 
